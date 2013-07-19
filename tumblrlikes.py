@@ -124,7 +124,7 @@ class GetBlogPosts(webapp2.RequestHandler):
         self.response.out.write(json.dumps({'posts': response, 'name': blog_name}))
 
     def get_posts(self, blog_name):
-        blog_posts = BlogPost.query(BlogPost.blog_name == blog_name)
+        blog_posts = BlogPost.query(BlogPost.blog_name == blog_name).order(-BlogPost.key)
         response = []
         for post in blog_posts:
             new_post = {

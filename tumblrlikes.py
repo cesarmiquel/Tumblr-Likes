@@ -17,7 +17,10 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 
 # Blogs
 class Blog(ndb.Model):
-    name = ndb.StringProperty()        # ori
+    name  = ndb.StringProperty()        # ori
+    url   = ndb.StringProperty()
+    title = ndb.StringProperty()
+    posts = ndb.IntegerProperty()
 
 # Blog Post Image
 class BlogPostImage(ndb.Model):
@@ -100,6 +103,39 @@ class ProcessBlogLikes(webapp2.RequestHandler):
 
         return 0
 
+# Update blog stats and information
+class UpdateBlogInfo(webapp2.RequestHandler):
+    def get(self):
+        posts_processed = 0
+        api_key = self.request.get("api_key")
+        blog_name = self.request.get("blog_name")
+        offset = int(self.request.get("offset"))
+
+        options = ndb.QueryOptions(offset=offset, limit=20)
+        blog_names = Blog.query(default_options=options)
+        response = []
+        for blog in blog_names:
+            if blog.title == None:
+                url = 'http://api.tumblr.com/v2/blog/%s.tumblr.com/info?api_key=%s' % (blog.name, api_key)
+                result = urlfetch.fetch(url)
+                if result.status_code == 200:
+                    blog_info = json.loads(result.content)
+
+                    # count how many posts we have
+                    num_posts = BlogPost.query(BlogPost.blog_name == blog.name).count()
+
+                    # save blog
+                    blog.title = blog_info['response']['blog']['title']
+                    blog.url = blog.name + '.tumblr.com'
+                    blog.posts = num_posts
+                    blog.put()
+
+                    response.append({'name': blog.name, 'title': blog_info['response']['blog']['title'], 'url': blog.name + '.tumblr.com', 'posts': num_posts})
+                    posts_processed += 1
+
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps({'posts_processed': posts_processed, 'blogs':response}))
+
 # Retrieve the list of available blogs
 class GetBlogList(webapp2.RequestHandler):
 
@@ -108,7 +144,7 @@ class GetBlogList(webapp2.RequestHandler):
         blog_names = Blog.query()
         response = []
         for blog in blog_names:
-            response.append(blog.name)
+            response.append({'name': blog.name, 'title': blog.title, 'posts': blog.posts, 'url': blog.url})
 
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps({'blogs': response}))
@@ -176,4 +212,5 @@ application = webapp2.WSGIApplication([
     ('/posts', GetBlogPosts),
     ('/postshtml', GetBlogPostsHtml),
     ('/process', ProcessBlogLikes),
+    ('/updatestats', UpdateBlogInfo),
 ], debug=True)

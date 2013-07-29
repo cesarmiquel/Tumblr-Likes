@@ -7,8 +7,9 @@ $(window).load(function() {
   $.getJSON('/blogs', function(data) {
     var html = '';
     for(var i = 0; i < data.blogs.length; i++) {
-      var blog_name = data.blogs[i];
-      html += '<li><a href="#' + blog_name + '" data-blog="' + blog_name + '" class="blog-icon"><img class="avatar" src="http://api.tumblr.com/v2/blog/' + blog_name + '.tumblr.com/avatar" /></a></li>';
+      var blog = data.blogs[i];
+      html += '<li><a href="#' + blog.name + '" data-blog="' + blog.name + '" class="blog-icon"><img class="avatar" src="http://api.tumblr.com/v2/blog/' + blog.url + '/avatar" /></a></li>';
+      window.blogs[blog.name] = {'info': blog}
     }
     $('.flexslider .slides').append(html);
 
@@ -29,19 +30,15 @@ $(window).load(function() {
 
     $('.blog-icon').click(function() {
       var blogName = $(this).data('blog');
-
-      // if we read it use it
-      if (window.blogs[blogName]) {
-        showBlog(window.blogs[blogName])
-        return;
-      }
-
-      // first time. Bring via API:
-      $.getJSON('/posts', {blog_name: blogName}, function(data) {
-        window.blogs[data.name] = data
-        showBlog(window.blogs[blogName])
-      });
+      showBlog(blogName)
     });
+
+    // if the URL specifies a blog show it.
+    var hash = window.location.hash;
+    if (hash != '') {
+      showBlog(hash.replace('#', ''));
+    }
+
   });
 
 	// hide blog info on start
@@ -88,7 +85,7 @@ $(window).load(function() {
 	// helpers
 	function showBlogInfo(blogName) {
 		var info = window.blogs[blogName].info;
-		var numPosts = window.blogs[blogName].posts.length
+		var numPosts = info.posts
 		var title = '';
 		if (info.title) {
 			title = info.title;
@@ -101,16 +98,32 @@ $(window).load(function() {
 		if (title.length > 30) {
 			title = title.substr(0, 30) + '...';
 		}
-		var html = '<img src="' + window.blogs[blogName].avatar + '" />' + '<h2>' + title + '</h2>';
-		html += '<p><a href="' + info.url + '" target="_blank">' + info.url + '</a>'
-		  + '- <a href="' + info.url + 'archive" target="_blank">archive</a><br/>'
+		var html = '<img src="http://api.tumblr.com/v2/blog/' + info.url + '/avatar" />' + '<h2>' + title + '</h2>';
+		html += '<p><a href="http://' + info.url + '" target="_blank">' + info.url + '</a>'
+		  + ' - <a href="http://' + info.url + '/archive" target="_blank">archive</a><br/>'
 		  + '<span class="num-posts">' + numPosts + ' posts</span></p>';
 		$('#blog-info').html(html);
 		$('#blog-info').show();
 	}
 
   // show a blogs
-  function showBlog(blogData) {
+  function showBlog(blogName) {
+
+    // if we don't have the data yet pull it via JSON
+    // and then call this function again.
+    if (window.blogs[blogName].posts == undefined) {
+
+      // first time. Bring via API:
+      $.getJSON('/posts', {blog_name: blogName}, function(data) {
+        window.blogs[data.name].posts = data;
+        showBlog(blogName);
+      });
+
+      return;
+    }
+
+    blogData = window.blogs[blogName].posts;
+
     // set opacity on previously selected blog to 1
     if (window.selectedBlog != '') {
       $img = $("[data-blog='" + window.selectedBlog + "'] img");
@@ -171,8 +184,6 @@ $(window).load(function() {
     if( $img) {
       $img.css('opacity', 0.3);
     }
-
-
   }
 
   function stripTags(html) {

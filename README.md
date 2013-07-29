@@ -33,6 +33,11 @@ This is *really* manual now. I'll improve the process shortly. Will probably hav
 a form and allow you to put the key and blog name and it will populate via JS. Stay
 tuned. I'm only including this in case you stumble upon this site and want to test it.
 
+Deploying
+---------
+
+appcfg.py update <appdir>
+
 
 Cesar
 miquel@easytech.com.ar

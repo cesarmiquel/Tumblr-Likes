@@ -41,12 +41,13 @@ class BlogPost(ndb.Model):
 # Get blog likes and add them to queue
 class ProcessBlogLikes(webapp2.RequestHandler):
     def get(self):
+        updated_blogs = {}
         posts_saved = 0
-        api_key = self.request.get("api_key")
+        self.api_key = self.request.get("api_key")
         blog_name = self.request.get("blog_name")
         offset = int(self.request.get("offset"))
 
-        url = 'http://api.tumblr.com/v2/blog/%s/likes?api_key=%s&limit=20&offset=%d' % (blog_name, api_key, offset)
+        url = 'http://api.tumblr.com/v2/blog/%s/likes?api_key=%s&limit=20&offset=%d' % (blog_name, self.api_key, offset)
 
         result = urlfetch.fetch(url)
         if result.status_code == 200:
@@ -58,6 +59,17 @@ class ProcessBlogLikes(webapp2.RequestHandler):
                     continue
 
                 posts_saved = posts_saved + self.save_post(post)
+                if post['blog_name'] not in updated_blogs:
+                    updated_blogs[post['blog_name']] = 1
+
+            # Update number of posts
+            for blog_name in updated_blogs:
+                num_posts = BlogPost.query(BlogPost.blog_name == blog_name).count()
+                blog_key = ndb.Key('Blog', blog_name)
+                blog = blog_key.get()
+                blog.posts = num_posts
+                blog.put()
+                print "Found %d posts in %s" % (num_posts, blog_name)
 
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps({'posts_saved': posts_saved}))
@@ -71,6 +83,15 @@ class ProcessBlogLikes(webapp2.RequestHandler):
             blog = Blog()
             blog.name = post['blog_name']
             blog.key = blog_key
+            blog.posts = 0
+            blog.url = blog.name + '.tumblr.com'
+
+            url = 'http://api.tumblr.com/v2/blog/%s.tumblr.com/info?api_key=%s' % (blog.name, self.api_key)
+            result = urlfetch.fetch(url)
+            if result.status_code == 200:
+                blog_info = json.loads(result.content)
+                # save blog
+                blog.title = blog_info['response']['blog']['title']
             blog.put()
 
         # find post in DB. If not found save

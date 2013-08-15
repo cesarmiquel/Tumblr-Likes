@@ -22,6 +22,7 @@ article ul {
   list-style: none;
   padding: 0;
   line-height: 0;
+  margin: 0;
 }
 
 .caption {
@@ -101,7 +102,6 @@ body {
 .blog-post .caption {
   padding: 10px;
   border-top: 3px solid #93e;
-  margin-top: -10px;
 }
 
 .blog-post ul li a {

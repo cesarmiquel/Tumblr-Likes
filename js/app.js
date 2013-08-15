@@ -3,6 +3,12 @@ $(window).load(function() {
 	window.selectedBlog = '';
   window.blogs = [];
 
+  window.app = {
+  	settings : {
+  		masonryColumnWidth: 400,	
+  	}
+  };
+
   // get posts and init flexslider when done
   $.getJSON('/blogs', function(data) {
     var html = '';
@@ -53,9 +59,10 @@ $(window).load(function() {
 		$container.imagesLoaded(function(){
 			$container.masonry({
 				itemSelector : '.blog-post',
-				columnWidth : 500,
+				columnWidth : window.app.settings.masonryColumnWidth,
+				gutter: 10,
 				isFitWidth: true,
-				containerStyle: {position: 'absolute'},
+				containerStyle: {position: 'relative'},
 			});
 		});
 	});
@@ -144,7 +151,7 @@ $(window).load(function() {
             image_url = post.photos[j].medium_url;
         }
 				html += '<li>';
-				html += '<img src="' + image_url + '" style="width: 450px"/>';
+				html += '<img src="' + image_url + '" class="img-responsive clearfix" />';
 				html += '<a href="//pinterest.com/pin/create/button/?url=' + encodeURIComponent(post.post_url);
         html += '&media=' + encodeURIComponent(image_url);
         html += '&description=' + encodeURIComponent(strippedCaption + '\nhttp://' + blogData.name + '.tumblr.com') + '"';
@@ -172,7 +179,10 @@ $(window).load(function() {
 		$container.imagesLoaded(function(){
 			$container.masonry({
 				itemSelector : '.blog-post',
-				columnWidth : 500
+				gutter : 10,
+				columnWidth : window.app.settings.masonryColumnWidth,
+				isFitWidth: true,
+				containerStyle: {position: 'relative'},
 			});
 		});
 

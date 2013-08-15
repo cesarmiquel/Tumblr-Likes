@@ -4,8 +4,8 @@ $(window).load(function() {
   window.blogs = [];
 
   window.app = {
-  	settings : {
-  		masonryColumnWidth: 400,	
+		settings : {
+			masonryColumnWidth: 400,
   	}
   };
 
@@ -162,9 +162,11 @@ $(window).load(function() {
 				html += '</li>';
 			}
 			html += '</ul>';
-			html += '<div class="caption">';
-			html += post.caption;
-			html += '</div>';
+			if (post.caption != '') {
+				html += '<div class="caption">';
+				html += post.caption;
+				html += '</div>';
+			}
 			html += '</section>';
 		}
 		html += '</article>';

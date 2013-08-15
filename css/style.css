@@ -21,6 +21,7 @@ body {
 article ul {
   list-style: none;
   padding: 0;
+  line-height: 0;
 }
 
 .caption {

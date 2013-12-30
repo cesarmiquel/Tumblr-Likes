@@ -5,7 +5,7 @@ $(window).load(function() {
 
   window.app = {
 		settings : {
-			masonryColumnWidth: 400,
+			masonryColumnWidth: 320,
   	}
   };
 
@@ -44,7 +44,6 @@ $(window).load(function() {
     if (hash != '') {
       showBlog(hash.replace('#', ''));
     }
-
   });
 
 	// hide blog info on start
@@ -141,7 +140,7 @@ $(window).load(function() {
 
 		var html = '<article class="blog-posts">';
 		for(var i = 0; i < blogData.posts.length; i++) {
-			html += '<section class="blog-post">';
+			html += '<section class="blog-post" style="width:' + (window.app.settings.masonryColumnWidth - 20)+ 'px">';
 			html += '<ul>';
 			var post = blogData.posts[i];
       var strippedCaption = stripTags(post.caption)
@@ -151,7 +150,9 @@ $(window).load(function() {
             image_url = post.photos[j].medium_url;
         }
 				html += '<li>';
-				html += '<img src="' + image_url + '" class="img-responsive clearfix" />';
+				html += '<a href="' + post.photos[j].url + '" class="colorbox">';
+				html += '  <img src="' + image_url + '" class="img-responsive clearfix" />';
+				html += '</a>';
 				html += '<a href="//pinterest.com/pin/create/button/?url=' + encodeURIComponent(post.post_url);
         html += '&media=' + encodeURIComponent(image_url);
         html += '&description=' + encodeURIComponent(strippedCaption + '\nhttp://' + blogData.name + '.tumblr.com') + '"';
@@ -187,6 +188,9 @@ $(window).load(function() {
 				containerStyle: {position: 'relative'},
 			});
 		});
+
+    // bind colorbox
+    $('a.colorbox').colorbox();
 
     // Save blog name
 		window.selectedBlog = blogName;

@@ -174,15 +174,22 @@ class GetBlogList(webapp2.RequestHandler):
 class GetBlogPosts(webapp2.RequestHandler):
     def get(self):
         blog_name = self.request.get('blog_name')
+        cursor  = self.request.get('cursor')
 
-        response = self.get_posts(blog_name)
+        response = self.get_posts(blog_name, cursor)
 
         self.response.headers['Content-Type'] = 'application/json'
-        self.response.out.write(json.dumps({'posts': response, 'name': blog_name}))
+        self.response.out.write(json.dumps({'posts': response['posts'], 'name': blog_name, 'cursor': response['cursor']}))
 
-    def get_posts(self, blog_name):
-        blog_posts = BlogPost.query(BlogPost.blog_name == blog_name).order(-BlogPost.key)
-        response = []
+    def get_posts(self, blog_name, cursor = ''):
+        page_size = 30
+        curs = ndb.Cursor(urlsafe = cursor)
+        if blog_name != 'likes':
+            blog_posts, next_cursor, more = BlogPost.query(BlogPost.blog_name == blog_name).order(-BlogPost.key).fetch_page(page_size, start_cursor = curs)
+        else:
+            blog_posts, next_cursor, more = BlogPost.query().order(-BlogPost.key).fetch_page(page_size, start_cursor = curs)
+
+        response = {'posts': [], 'cursor': ''}
         for post in blog_posts:
             new_post = {
                 'blog_name': post.blog_name,
@@ -200,7 +207,13 @@ class GetBlogPosts(webapp2.RequestHandler):
                         'caption': photo.caption,
                     }
                 )
-            response.append(new_post)
+            response['posts'].append(new_post)
+
+        if next_cursor != None:
+            response['cursor'] = next_cursor.urlsafe()
+        else:
+            response['cursor'] = ''
+
         return response
 
 

@@ -216,12 +216,15 @@ $(window).load(function() {
 
   function addScrollHandler() {
     // Scroll
+    var locked = false;
     $(window).scroll(function() {
-     if ($(window).scrollTop() + $(window).height() == $(document).height()) {
+
+      if ($(window).scrollTop() + $(window).height() == $(document).height() && !locked) {
         // Retrieve more posts if there is a valid cursor
         if (blogData.current_cursor == '') {
           return;
         }
+        locked = true;
         $.getJSON('/posts', {blog_name: blogData.info.name, cursor: blogData.current_cursor}, function(data) {
           // Add items to bottom
           var $container = $('.blog-posts');
@@ -229,6 +232,7 @@ $(window).load(function() {
             var post = data.posts[i];
             var e = $(getBlogArticleMarkup(post));
             $container.append(e).masonry('appended', e);
+            locked = false;
           }
 
           window.blogs[data.name].posts = window.blogs[data.name].posts.concat(data.posts);

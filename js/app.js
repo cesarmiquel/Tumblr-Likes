@@ -12,6 +12,8 @@ $(window).load(function() {
   // get posts and init flexslider when done
   $.getJSON('/blogs', function(data) {
     var html = '';
+    html += '<li><a href="#likes" data-blog="likes" class="blog-icon"><img class="avatar" src="images/star.png" /></a></li>';
+    window.blogs['likes'] = {'info': {name: 'likes', posts: 0, title:'Likes', url:''}}
     for(var i = 0; i < data.blogs.length; i++) {
       var blog = data.blogs[i];
       html += '<li><a href="#' + blog.name + '" data-blog="' + blog.name + '" class="blog-icon"><img class="avatar" src="http://api.tumblr.com/v2/blog/' + blog.url + '/avatar" /></a></li>';
@@ -63,6 +65,7 @@ $(window).load(function() {
 				isFitWidth: true,
 				containerStyle: {position: 'relative'},
 			});
+      addScrollHandler();
 		});
 	});
 
@@ -91,7 +94,7 @@ $(window).load(function() {
 	// helpers
 	function showBlogInfo(blogName) {
 		var info = window.blogs[blogName].info;
-		var numPosts = info.posts
+		var numPosts = info.posts > 0 ? info.posts : 'many';
 		var title = '';
 		if (info.title) {
 			title = info.title;
@@ -112,6 +115,7 @@ $(window).load(function() {
 		$('#blog-info').show();
 	}
 
+
   // show a blogs
   function showBlog(blogName) {
 
@@ -121,14 +125,15 @@ $(window).load(function() {
 
       // first time. Bring via API:
       $.getJSON('/posts', {blog_name: blogName}, function(data) {
-        window.blogs[data.name].posts = data;
+        window.blogs[data.name].posts = data.posts;
+        window.blogs[data.name].current_cursor = data.cursor;
         showBlog(blogName);
       });
 
       return;
     }
 
-    blogData = window.blogs[blogName].posts;
+    blogData = window.blogs[blogName];
 
     // set opacity on previously selected blog to 1
     if (window.selectedBlog != '') {
@@ -140,35 +145,8 @@ $(window).load(function() {
 
 		var html = '<article class="blog-posts">';
 		for(var i = 0; i < blogData.posts.length; i++) {
-			html += '<section class="blog-post" style="width:' + (window.app.settings.masonryColumnWidth - 20)+ 'px">';
-			html += '<ul>';
 			var post = blogData.posts[i];
-      var strippedCaption = stripTags(post.caption)
-			for(var j = 0; j < post.photos.length; j++) {
-        var image_url = post.photos[j].url;
-        if (post.photos[j].medium_url) {
-            image_url = post.photos[j].medium_url;
-        }
-				html += '<li>';
-				html += '<a href="' + post.photos[j].url + '" class="colorbox">';
-				html += '  <img src="' + image_url + '" class="img-responsive clearfix" />';
-				html += '</a>';
-				html += '<a href="//pinterest.com/pin/create/button/?url=' + encodeURIComponent(post.post_url);
-        html += '&media=' + encodeURIComponent(image_url);
-        html += '&description=' + encodeURIComponent(strippedCaption + '\nhttp://' + blogData.name + '.tumblr.com') + '"';
-        html += ' data-pin-do="buttonPin"';
-        html += ' data-pin-config="above">';
-        html += '<img src="//assets.pinterest.com/images/pidgets/pin_it_button.png" />';
-        html += '</a>';
-				html += '</li>';
-			}
-			html += '</ul>';
-			if (post.caption != '') {
-				html += '<div class="caption">';
-				html += post.caption;
-				html += '</div>';
-			}
-			html += '</section>';
+      html += getBlogArticleMarkup(post);
 		}
 		html += '</article>';
 
@@ -200,6 +178,68 @@ $(window).load(function() {
     if( $img) {
       $img.css('opacity', 0.3);
     }
+  }
+
+  function getBlogArticleMarkup(post) {
+    var strippedCaption = stripTags(post.caption);
+
+    html = '';
+	  html += '<section class="blog-post" style="width:' + (window.app.settings.masonryColumnWidth - 20)+ 'px">';
+		html += '<ul>';
+    for(var j = 0; j < post.photos.length; j++) {
+      var image_url = post.photos[j].url;
+      if (post.photos[j].medium_url) {
+          image_url = post.photos[j].medium_url;
+      }
+      html += '<li>';
+      html += '<a href="' + post.photos[j].url + '" class="colorbox">';
+      html += '  <img src="' + image_url + '" class="img-responsive clearfix" />';
+      html += '</a>';
+      html += '<a href="//pinterest.com/pin/create/button/?url=' + encodeURIComponent(post.post_url);
+      html += '&media=' + encodeURIComponent(image_url);
+      html += '&description=' + encodeURIComponent(strippedCaption + '\nhttp://' + blogData.name + '.tumblr.com') + '"';
+      html += ' data-pin-do="buttonPin"';
+      html += ' data-pin-config="above">';
+      html += '<img src="//assets.pinterest.com/images/pidgets/pin_it_button.png" />';
+      html += '</a>';
+      html += '</li>';
+    }
+    html += '</ul>';
+    if (post.caption != '') {
+      html += '<div class="caption">';
+      html += post.caption;
+      html += '</div>';
+    }
+ 		html += '</section>';
+    return html;
+  }
+
+  function addScrollHandler() {
+    // Scroll
+    var locked = false;
+    $(window).scroll(function() {
+
+      if ($(window).scrollTop() + $(window).height() == $(document).height() && !locked) {
+        // Retrieve more posts if there is a valid cursor
+        if (blogData.current_cursor == '') {
+          return;
+        }
+        locked = true;
+        $.getJSON('/posts', {blog_name: blogData.info.name, cursor: blogData.current_cursor}, function(data) {
+          // Add items to bottom
+          var $container = $('.blog-posts');
+          for(i = 0; i < data.posts.length; i++) {
+            var post = data.posts[i];
+            var e = $(getBlogArticleMarkup(post));
+            $container.append(e).masonry('appended', e);
+            locked = false;
+          }
+
+          window.blogs[data.name].posts = window.blogs[data.name].posts.concat(data.posts);
+          window.blogs[data.name].current_cursor = data.cursor;
+        });
+     }
+    });
   }
 
   function stripTags(html) {

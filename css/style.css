@@ -108,3 +108,6 @@ body {
   padding: 10px;
   margin-top: -40px;
 }
+.blog-post ul li a.colorbox {
+  margin-top: 0;
+}

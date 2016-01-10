@@ -1,5 +1,5 @@
 application: tumblr-likes
-version: 1
+version: beta-001
 runtime: python27
 api_version: 1
 threadsafe: true
@@ -9,8 +9,6 @@ handlers:
   static_dir: css
 - url: /js
   static_dir: js
-- url: /images
-  static_dir: images
 - url: /.*
   script: tumblrlikes.application
 

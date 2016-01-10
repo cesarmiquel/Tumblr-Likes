@@ -58,7 +58,7 @@ $(window).load(function() {
 		// Run masonry
 		var $container = $('.blog-posts');
 		$container.imagesLoaded(function(){
-			$container.masonry({
+			var $grid = $container.masonry({
 				itemSelector : '.blog-post',
 				columnWidth : window.app.settings.masonryColumnWidth,
 				gutter: 10,
@@ -158,13 +158,14 @@ $(window).load(function() {
 		// Run masonry
 		var $container = $('.blog-posts');
 		$container.imagesLoaded(function(){
-			$container.masonry({
+			var $grid = $container.masonry({
 				itemSelector : '.blog-post',
 				gutter : 10,
 				columnWidth : window.app.settings.masonryColumnWidth,
 				isFitWidth: true,
 				containerStyle: {position: 'relative'},
 			});
+      addScrollHandler();
 		});
 
     // bind colorbox
@@ -215,16 +216,17 @@ $(window).load(function() {
   }
 
   function addScrollHandler() {
-    // Scroll
-    var locked = false;
-    $(window).scroll(function() {
+    var load_more = $('#load-more-button.un-processed');
+    if (load_more.length == 1) {
 
-      if ($(window).scrollTop() + $(window).height() == $(document).height() && !locked) {
+      $('#load-more-button.un-processed').removeClass("un-processed");
+
+      $('#load-more-button').click(function() {
+
         // Retrieve more posts if there is a valid cursor
         if (blogData.current_cursor == '') {
           return;
         }
-        locked = true;
         $.getJSON('/posts', {blog_name: blogData.info.name, cursor: blogData.current_cursor}, function(data) {
           // Add items to bottom
           var $container = $('.blog-posts');
@@ -232,14 +234,30 @@ $(window).load(function() {
             var post = data.posts[i];
             var e = $(getBlogArticleMarkup(post));
             $container.append(e).masonry('appended', e);
-            locked = false;
           }
 
           window.blogs[data.name].posts = window.blogs[data.name].posts.concat(data.posts);
           window.blogs[data.name].current_cursor = data.cursor;
+ 
+          // Run masonry
+          var $container = $('.blog-posts');
+          $container.imagesLoaded(function(){
+            $container.masonry({
+              itemSelector : '.blog-post',
+              gutter : 10,
+              columnWidth : window.app.settings.masonryColumnWidth,
+              isFitWidth: true,
+              containerStyle: {position: 'relative'},
+            });
+          });
+
         });
-     }
-    });
+
+        return false;
+
+
+     });
+   }
   }
 
   function stripTags(html) {

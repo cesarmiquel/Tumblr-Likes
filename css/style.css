@@ -2,10 +2,12 @@
 body {
   background-color: #111;
   color: white;
+  position: relative;
 }
 
 #main {
   width: 100%;
+  padding-bottom: 100px;
 }
 
 #main article {
@@ -110,4 +112,17 @@ body {
 }
 .blog-post ul li a.colorbox {
   margin-top: 0;
+}
+
+.load-more-container {
+  background: white;
+  padding: 15px;
+  text-align: center;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+.load-more-button a {
+  color: #333;
+  text-decoration: none;
 }

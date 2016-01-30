@@ -38,13 +38,22 @@ $(window).load(function() {
 
     $('.blog-icon').click(function() {
       var blogName = $(this).data('blog');
-      showBlog(blogName)
+      showBlog(blogName, 0)
     });
 
     // if the URL specifies a blog show it.
     var hash = window.location.hash;
     if (hash != '') {
-      showBlog(hash.replace('#', ''));
+      var query = window.location.search.substring(1);
+      var vars = query.split('&');
+      var page = 0;
+      for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        if (pair[0] == 'page') {
+          page = pair[1]
+        }
+      }
+      showBlog(hash.replace('#', ''), page);
     }
   });
 
@@ -117,17 +126,18 @@ $(window).load(function() {
 
 
   // show a blogs
-  function showBlog(blogName) {
+  function showBlog(blogName, page) {
 
     // if we don't have the data yet pull it via JSON
     // and then call this function again.
     if (window.blogs[blogName].posts == undefined) {
 
       // first time. Bring via API:
-      $.getJSON('/posts', {blog_name: blogName}, function(data) {
+      $.getJSON('/posts', {blog_name: blogName, page: page}, function(data) {
         window.blogs[data.name].posts = data.posts;
         window.blogs[data.name].current_cursor = data.cursor;
-        showBlog(blogName);
+        window.blogs[data.name].page = page;
+        showBlog(blogName, page);
       });
 
       return;
@@ -227,7 +237,7 @@ $(window).load(function() {
         if (blogData.current_cursor == '') {
           return;
         }
-        $.getJSON('/posts', {blog_name: blogData.info.name, cursor: blogData.current_cursor}, function(data) {
+        $.getJSON('/posts', {blog_name: blogData.info.name, cursor: blogData.current_cursor, page: blogData.pate}, function(data) {
           // Add items to bottom
           var $container = $('.blog-posts');
           for(i = 0; i < data.posts.length; i++) {
@@ -250,6 +260,11 @@ $(window).load(function() {
               containerStyle: {position: 'relative'},
             });
           });
+
+          // Hide more link if no more posts
+          if (data.more == false) {
+            $('.load-more-container').hide();
+          }
 
         });
 

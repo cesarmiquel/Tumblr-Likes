@@ -31,6 +31,11 @@ article ul {
   font-size: 14px;
 }
 
+.permalink {
+  float: right;
+  padding: 10px;
+}
+
 #nav {
   position: fixed;
   z-index: 100;

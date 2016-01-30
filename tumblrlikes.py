@@ -189,12 +189,12 @@ class GetBlogPosts(webapp2.RequestHandler):
     def get_posts(self, blog_name, cursor = '', page = 0):
         page_size = 30
         curs = ndb.Cursor(urlsafe = cursor)
-        #if blog_name != '':
-        #    blog_posts, next_cursor, more = BlogPost.query(BlogPost.blog_name == blog_name).order(-BlogPost.key).fetch_page(page_size, start_cursor = curs)
-        #else:
-        #    blog_posts, next_cursor, more = BlogPost.query().order(-BlogPost.key).fetch_page(page_size, start_cursor = curs)
         qo = ndb.QueryOptions(offset = page * page_size)
-        blog_posts, next_cursor, more = BlogPost.query().order(-BlogPost.key).fetch_page(page_size, start_cursor = curs, options=qo)
+        if blog_name != 'likes':
+            blog_posts, next_cursor, more = BlogPost.query(BlogPost.blog_name == blog_name).order(-BlogPost.key).fetch_page(page_size, start_cursor = curs, options=qo)
+        else:
+            blog_posts, next_cursor, more = BlogPost.query().order(-BlogPost.key).fetch_page(page_size, start_cursor = curs, options=qo)
+        # DEBUG blog_posts, next_cursor, more = BlogPost.query().order(-BlogPost.key).fetch_page(page_size, start_cursor = curs, options=qo)
 
         response = {'posts': [], 'cursor': '', 'more': more}
         for post in blog_posts:

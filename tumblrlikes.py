@@ -1,6 +1,7 @@
 import os
 import urllib
 import json
+import pprint
 
 from google.appengine.api import users
 from google.appengine.ext import ndb
@@ -175,21 +176,27 @@ class GetBlogPosts(webapp2.RequestHandler):
     def get(self):
         blog_name = self.request.get('blog_name')
         cursor  = self.request.get('cursor')
+        page  = self.request.get('page')
 
-        response = self.get_posts(blog_name, cursor)
+        if page == '':
+            page = '0'
+
+        response = self.get_posts(blog_name, cursor, int(page))
 
         self.response.headers['Content-Type'] = 'application/json'
-        self.response.out.write(json.dumps({'posts': response['posts'], 'name': blog_name, 'cursor': response['cursor']}))
+        self.response.out.write(json.dumps({'posts': response['posts'], 'name': blog_name, 'cursor': response['cursor'], 'more': response['more']}))
 
-    def get_posts(self, blog_name, cursor = ''):
+    def get_posts(self, blog_name, cursor = '', page = 0):
         page_size = 30
         curs = ndb.Cursor(urlsafe = cursor)
+        qo = ndb.QueryOptions(offset = page * page_size)
         if blog_name != 'likes':
-            blog_posts, next_cursor, more = BlogPost.query(BlogPost.blog_name == blog_name).order(-BlogPost.key).fetch_page(page_size, start_cursor = curs)
+            blog_posts, next_cursor, more = BlogPost.query(BlogPost.blog_name == blog_name).order(-BlogPost.key).fetch_page(page_size, start_cursor = curs, options=qo)
         else:
-            blog_posts, next_cursor, more = BlogPost.query().order(-BlogPost.key).fetch_page(page_size, start_cursor = curs)
+            blog_posts, next_cursor, more = BlogPost.query().order(-BlogPost.key).fetch_page(page_size, start_cursor = curs, options=qo)
+        # DEBUG blog_posts, next_cursor, more = BlogPost.query().order(-BlogPost.key).fetch_page(page_size, start_cursor = curs, options=qo)
 
-        response = {'posts': [], 'cursor': ''}
+        response = {'posts': [], 'cursor': '', 'more': more}
         for post in blog_posts:
             new_post = {
                 'blog_name': post.blog_name,

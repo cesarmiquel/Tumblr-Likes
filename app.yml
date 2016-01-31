@@ -1,5 +1,5 @@
 application: tumblr-likes
-version: 1
+version: beta-001
 runtime: python27
 api_version: 1
 threadsafe: true
